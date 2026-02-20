@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { createClient } from '../lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 const statusOptions = ['Applied', 'Phone Screen', 'Interview', 'Take Home', 'Final Round', 'Offer', 'Rejected', 'Ghosted', 'Withdrawn']
@@ -26,6 +26,7 @@ const emptyForm = {
 }
 
 export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
+  const supabase = createClient()
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)

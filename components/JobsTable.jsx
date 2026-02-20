@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { supabase } from '../lib/supabase'
+import { createClient } from '../lib/supabase/client'
 import AddJobForm from './AddJobForm'
 
 const statusColors = {
@@ -101,6 +101,7 @@ function JobDetailPanel({ job, onClose, onEdit, onDelete }) {
 }
 
 export default function JobsTable({ jobs, onRefresh }) {
+  const supabase = createClient()
   const [selectedJob, setSelectedJob] = useState(null)
   const [editingJob, setEditingJob] = useState(null)
 
