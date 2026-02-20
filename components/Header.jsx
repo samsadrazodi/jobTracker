@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '../lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 
 export default function Header() {
@@ -9,6 +9,7 @@ export default function Header() {
   const [showMenu, setShowMenu] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     async function getUser() {
@@ -24,13 +25,35 @@ export default function Header() {
     router.refresh()
   }
 
+  const navItems = [
+    { label: '📊 Dashboard', href: '/' },
+    { label: '📋 Applications', href: '/applications' },
+  ]
+
   return (
     <header className="border-b border-gray-200 bg-white sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
 
-        {/* Logo */}
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-black text-gray-900 tracking-tight">Job<span className="text-blue-600">Tracker</span></span>
+        {/* Logo + Nav */}
+        <div className="flex items-center gap-8">
+          <span className="text-xl font-black text-gray-900 tracking-tight">
+            Job<span className="text-blue-600">Tracker</span>
+          </span>
+          <nav className="flex items-center gap-1">
+            {navItems.map(item => (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  pathname === item.href
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
         </div>
 
         {/* Right side */}
@@ -48,10 +71,7 @@ export default function Header() {
 
           {showMenu && (
             <>
-              {/* Backdrop */}
               <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-
-              {/* Dropdown */}
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-xs text-gray-400">Signed in as</p>
