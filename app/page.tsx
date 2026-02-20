@@ -5,6 +5,7 @@ import { createClient } from '../lib/supabase/client'
 import JobsTable from '../components/JobsTable'
 import AddJobForm from '../components/AddJobForm'
 import Header from '../components/Header'
+import Dashboard from '../components/Dashboard'
 
 export default function Home() {
   const [jobs, setJobs] = useState([])
@@ -41,7 +42,10 @@ export default function Home() {
         {loading ? (
           <p className="text-center text-gray-400 py-20">Loading your applications...</p>
         ) : (
-          <JobsTable jobs={jobs} onRefresh={fetchJobs} />
+          <>
+            <Dashboard jobs={jobs} />
+            <JobsTable jobs={jobs} onRefresh={fetchJobs} />
+          </>
         )}
       </main>
     </>
