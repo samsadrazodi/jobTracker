@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import JobsTable from '../../components/JobsTable'
 import AddJobForm from '../../components/AddJobForm'
@@ -9,10 +9,20 @@ import Header from '../../components/Header'
 
 const PAGE_SIZE = 20
 
+const statusOptions = ['Applied', 'Phone Screen', 'Interview', 'Take Home', 'Final Round', 'Offer', 'Rejected', 'Ghosted', 'Withdrawn']
+const workTypeOptions = ['Remote', 'Hybrid', 'On-site']
+
 export default function ApplicationsPage() {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+
+  // Filters
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [workTypeFilter, setWorkTypeFilter] = useState('')
+  const [sourceFilter, setSourceFilter] = useState('')
+
   const supabase = createClient()
 
   async function fetchJobs() {
@@ -29,24 +39,66 @@ export default function ApplicationsPage() {
     fetchJobs()
   }, [])
 
-  // Pagination logic
-  const totalPages = Math.ceil(jobs.length / PAGE_SIZE)
-  const paginatedJobs = jobs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  // Unique sources from data
+  const sourceOptions = useMemo(() => {
+    const sources = [...new Set(jobs.map(j => j.source).filter(Boolean))]
+    return sources.sort()
+  }, [jobs])
+
+  // Filtered jobs
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => {
+      const searchLower = search.toLowerCase()
+      const matchesSearch = !search ||
+        job.company_name?.toLowerCase().includes(searchLower) ||
+        job.job_title?.toLowerCase().includes(searchLower)
+      const matchesStatus = !statusFilter || job.status === statusFilter
+      const matchesWorkType = !workTypeFilter || job.work_type === workTypeFilter
+      const matchesSource = !sourceFilter || job.source === sourceFilter
+      return matchesSearch && matchesStatus && matchesWorkType && matchesSource
+    })
+  }, [jobs, search, statusFilter, workTypeFilter, sourceFilter])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter, workTypeFilter, sourceFilter])
+
+  const hasActiveFilters = search || statusFilter || workTypeFilter || sourceFilter
+
+  function clearFilters() {
+    setSearch('')
+    setStatusFilter('')
+    setWorkTypeFilter('')
+    setSourceFilter('')
+  }
+
+  // Pagination
+  const totalPages = Math.ceil(filteredJobs.length / PAGE_SIZE)
+  const paginatedJobs = filteredJobs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   function goToPage(page) {
     setCurrentPage(page)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const selectClass = "border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 bg-white"
+
   return (
     <>
       <Header />
       <main className="max-w-6xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
+
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Applications</h1>
             <p className="text-gray-500 mt-1">
-              {loading ? 'Loading...' : `${jobs.length} application${jobs.length !== 1 ? 's' : ''} · Page ${currentPage} of ${totalPages}`}
+              {loading ? 'Loading...' : (
+                hasActiveFilters
+                  ? `${filteredJobs.length} of ${jobs.length} application${jobs.length !== 1 ? 's' : ''}`
+                  : `${jobs.length} application${jobs.length !== 1 ? 's' : ''} · Page ${currentPage} of ${Math.max(totalPages, 1)}`
+              )}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -55,9 +107,60 @@ export default function ApplicationsPage() {
           </div>
         </div>
 
+        {/* Search + Filters */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 flex flex-wrap gap-3 items-center">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+            <input
+              type="text"
+              placeholder="Search company or job title..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            />
+          </div>
+
+          {/* Status */}
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className={selectClass}>
+            <option value="">All Statuses</option>
+            {statusOptions.map(s => <option key={s}>{s}</option>)}
+          </select>
+
+          {/* Work Type */}
+          <select value={workTypeFilter} onChange={e => setWorkTypeFilter(e.target.value)} className={selectClass}>
+            <option value="">All Work Types</option>
+            {workTypeOptions.map(s => <option key={s}>{s}</option>)}
+          </select>
+
+          {/* Source */}
+          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} className={selectClass}>
+            <option value="">All Sources</option>
+            {sourceOptions.map(s => <option key={s}>{s}</option>)}
+          </select>
+
+          {/* Clear */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-sm text-red-500 hover:text-red-600 border border-red-200 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+            >
+              ✕ Clear
+            </button>
+          )}
+        </div>
+
+        {/* No results */}
+        {!loading && filteredJobs.length === 0 && (
+          <div className="text-center py-20 text-gray-400">
+            <p className="text-lg mb-2">No applications match your filters.</p>
+            <button onClick={clearFilters} className="text-sm text-blue-500 hover:underline">Clear filters</button>
+          </div>
+        )}
+
         {loading ? (
           <p className="text-center text-gray-400 py-20">Loading your applications...</p>
-        ) : (
+        ) : filteredJobs.length > 0 ? (
           <>
             <JobsTable jobs={paginatedJobs} onRefresh={fetchJobs} />
 
@@ -79,9 +182,7 @@ export default function ApplicationsPage() {
                     Math.abs(page - currentPage) <= 1
                   )
                   .reduce((acc, page, idx, arr) => {
-                    if (idx > 0 && page - arr[idx - 1] > 1) {
-                      acc.push('...')
-                    }
+                    if (idx > 0 && page - arr[idx - 1] > 1) acc.push('...')
                     acc.push(page)
                     return acc
                   }, [])
@@ -113,7 +214,8 @@ export default function ApplicationsPage() {
               </div>
             )}
           </>
-        )}
+        ) : null}
+
       </main>
     </>
   )

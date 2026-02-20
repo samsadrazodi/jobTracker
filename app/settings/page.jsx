@@ -5,6 +5,104 @@ import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
+
+
+function ImportHistory() {
+  const [imports, setImports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [undoing, setUndoing] = useState(null)
+  const [message, setMessage] = useState(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadImports()
+  }, [])
+
+  async function loadImports() {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('imported_at')
+      .not('imported_at', 'is', null)
+      .order('imported_at', { ascending: false })
+
+    if (!error && data) {
+      // Group by imported_at timestamp and count rows
+      const grouped = data.reduce((acc, row) => {
+        const key = row.imported_at
+        acc[key] = (acc[key] || 0) + 1
+        return acc
+      }, {})
+
+      const importList = Object.entries(grouped)
+        .map(([timestamp, count]) => ({ timestamp, count }))
+        .slice(0, 5) // show last 5 imports
+
+      setImports(importList)
+    }
+    setLoading(false)
+  }
+
+  async function handleUndo(timestamp) {
+    setUndoing(timestamp)
+    setMessage(null)
+
+    const { error, count } = await supabase
+      .from('applications')
+      .delete({ count: 'exact' })
+      .eq('imported_at', timestamp)
+
+    setUndoing(null)
+
+    if (error) {
+      setMessage({ type: 'error', text: error.message })
+    } else {
+      setMessage({ type: 'success', text: `✅ Removed ${count} imported applications.` })
+      loadImports()
+    }
+  }
+
+  function formatDate(timestamp) {
+    return new Date(timestamp).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    })
+  }
+
+  if (loading) return <p className="text-sm text-gray-400">Loading import history...</p>
+
+  if (imports.length === 0) {
+    return <p className="text-sm text-gray-400">No CSV imports found.</p>
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {message && (
+        <p className={`text-sm px-3 py-2 rounded-md border ${
+          message.type === 'success'
+            ? 'bg-green-50 border-green-100 text-green-700'
+            : 'bg-red-50 border-red-100 text-red-500'
+        }`}>
+          {message.text}
+        </p>
+      )}
+      {imports.map(({ timestamp, count }) => (
+        <div key={timestamp} className="flex items-center justify-between border border-gray-100 rounded-lg px-4 py-3 bg-gray-50">
+          <div>
+            <p className="text-sm font-medium text-gray-800">{formatDate(timestamp)}</p>
+            <p className="text-xs text-gray-400">{count} application{count !== 1 ? 's' : ''} imported</p>
+          </div>
+          <button
+            onClick={() => handleUndo(timestamp)}
+            disabled={undoing === timestamp}
+            className="text-sm text-red-500 border border-red-200 hover:bg-red-50 disabled:opacity-40 px-3 py-1.5 rounded-md transition-colors"
+          >
+            {undoing === timestamp ? 'Undoing...' : '↩ Undo Import'}
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
 export default function SettingsPage() {
   const [email, setEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -53,11 +151,31 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleDeleteAccount() {
-    if (deleteConfirm !== email) {
-      setDeleteError('Email does not match. Please type your email exactly.')
-      return
-    }
+async function handleDeleteAccount() {
+  if (deleteConfirm !== email) {
+    setDeleteError('Email does not match. Please type your email exactly.')
+    return
+  }
+
+  setDeleteLoading(true)
+
+  const response = await fetch('/api/delete-account', {
+    method: 'DELETE',
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    setDeleteError(data.error || 'Failed to delete account.')
+    setDeleteLoading(false)
+    return
+  }
+
+  // Sign out and redirect
+  await supabase.auth.signOut()
+  router.push('/login')
+  router.refresh()
+
 
     setDeleteLoading(true)
 
@@ -127,6 +245,14 @@ export default function SettingsPage() {
         </form>
       </div>
 
+
+{/* Import History */}
+<div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+  <h2 className="text-lg font-bold text-gray-900 mb-1">Import History</h2>
+  <p className="text-sm text-gray-400 mb-4">Undo a recent CSV import if you made a mistake.</p>
+
+  <ImportHistory />
+</div>
       {/* Delete Account */}
       <div className="bg-white border border-red-200 rounded-xl p-6">
         <h2 className="text-lg font-bold text-red-600 mb-2">Delete Account</h2>

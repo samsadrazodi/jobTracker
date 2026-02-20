@@ -104,8 +104,8 @@ export default function CSVImporter({ onImportComplete }) {
 
       // Filter out rows with no company name
       const validRows = rows.filter(row => row['Company'] && row['Company'].trim() !== '')
-      const mapped = validRows.map(row => mapRow(row, user.id))
-
+const importTimestamp = new Date().toISOString()
+const mapped = validRows.map(row => ({ ...mapRow(row, user.id), imported_at: importTimestamp }))
       // Insert in batches of 50
       let successCount = 0
       let errorCount = 0
