@@ -1,28 +1,44 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import JobsTable from '../components/JobsTable'
+import AddJobForm from '../components/AddJobForm'
 
-export default async function Home() {
-  console.log(process.env.NEXT_PUBLIC_SUPABASE_URL)
-  const { data: jobs, error } = await supabase
-    .from('applications')
-    .select('*')
+export default function Home() {
+  const [jobs, setJobs] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  if (error) {
-    return <p>Error loading jobs: {error.message}</p>
+  async function fetchJobs() {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (!error) setJobs(data)
+    setLoading(false)
   }
-  console.log('error:', error)
-console.log('jobs:', jobs)
+
+  useEffect(() => {
+    fetchJobs()
+  }, [])
 
   return (
-    <main style={{ padding: '40px' }}>
-      <h1>My Job Applications</h1>
-      <p>{jobs.length} applications total</p>
-      <ul>
-        {jobs.map((job) => (
-          <li key={job.id}>
-            <strong>{job.company_name}</strong> — {job.job_title} — {job.status}
-          </li>
-        ))}
-      </ul>
+    <main className="max-w-6xl mx-auto px-6 py-10">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Job Tracker</h1>
+          <p className="text-gray-500 mt-1">
+            {loading ? 'Loading...' : `${jobs.length} application${jobs.length !== 1 ? 's' : ''} total`}
+          </p>
+        </div>
+        <AddJobForm onJobAdded={fetchJobs} />
+      </div>
+      {loading ? (
+        <p className="text-center text-gray-400 py-20">Loading your applications...</p>
+      ) : (
+        <JobsTable jobs={jobs} onRefresh={fetchJobs} />
+      )}
     </main>
   )
 }
