@@ -55,8 +55,10 @@ export default function Dashboard({ jobs }) {
     return acc
   }, {})
 
-  const timelineData = Object.entries(byDate)
-    .map(([date, count]) => ({ date, count }))
+   const timelineData = Object.entries(byDate)
+    .map(([date, count]) => ({ date, count, sortKey: new Date(date + '/2026') }))
+    .sort((a, b) => a.sortKey - b.sortKey)
+    .map(({ date, count }) => ({ date, count }))
     .slice(-10)
 
   // --- Top sources ---

@@ -6,8 +6,20 @@ import { Button } from '@/components/ui/button'
 
 const statusOptions = ['Applied', 'Phone Screen', 'Interview', 'Take Home', 'Final Round', 'Offer', 'Rejected', 'Ghosted', 'Withdrawn']
 const sourceOptions = ['LinkedIn', 'Dice', 'Indeed', 'Company Site', 'Referral', 'Other']
-const applyMethodOptions = ['LinkedIn Easy Apply', 'LinkedIn External', 'Dice Easy Apply', 'Direct', 'Email', 'Referral']
+const applyMethodOptions = [
+  'LinkedIn- Easy Apply',
+  'LinkedIn- External Apply',
+  'Company Website',
+  'Indeed',
+  'Wellfound',
+  'Recruiter Email/InMail',
+  'Referral',
+  'Dice-EasyApply',
+  'Dice-External',
+  'Other'
+]
 const jobTypeOptions = ['Full-time', 'Part-time', 'Contract', 'Contract-to-hire', 'Freelance']
+const workTypeOptions = ['Remote', 'Hybrid', 'On-site']
 
 const emptyForm = {
   company_name: '',
@@ -19,6 +31,7 @@ const emptyForm = {
   apply_method: '',
   location: '',
   job_type: '',
+  work_type: '',
   resume_version: '',
   cover_letter: false,
   notes: '',
@@ -26,13 +39,12 @@ const emptyForm = {
 }
 
 export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
-  const supabase = createClient()
   const [form, setForm] = useState(emptyForm)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [open, setOpen] = useState(false)
+  const supabase = createClient()
 
-  // When editJob is passed in, open the form pre-filled
   useEffect(() => {
     if (editJob) {
       setForm({
@@ -45,6 +57,7 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
         apply_method: editJob.apply_method || '',
         location: editJob.location || '',
         job_type: editJob.job_type || '',
+        work_type: editJob.work_type || '',
         resume_version: editJob.resume_version || '',
         cover_letter: editJob.cover_letter || false,
         notes: editJob.notes || '',
@@ -84,17 +97,16 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
     let error
 
     if (editJob) {
-      // Update existing row
       const { error: updateError } = await supabase
         .from('applications')
         .update(cleanedForm)
         .eq('id', editJob.id)
       error = updateError
     } else {
-      // Insert new row
+      const { data: { user } } = await supabase.auth.getUser()
       const { error: insertError } = await supabase
         .from('applications')
-        .insert([cleanedForm])
+        .insert([{ ...cleanedForm, user_id: user.id }])
       error = insertError
     }
 
@@ -171,7 +183,15 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
 
               <div>
                 <label className={labelClass}>Location</label>
-                <input name="location" value={form.location} onChange={handleChange} className={inputClass} placeholder="e.g. New York, NY or Remote" />
+                <input name="location" value={form.location} onChange={handleChange} className={inputClass} placeholder="e.g. New York, NY" />
+              </div>
+
+              <div>
+                <label className={labelClass}>Work Type</label>
+                <select name="work_type" value={form.work_type} onChange={handleChange} className={inputClass}>
+                  <option value="">— Select —</option>
+                  {workTypeOptions.map(s => <option key={s}>{s}</option>)}
+                </select>
               </div>
 
               <div>

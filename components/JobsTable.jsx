@@ -10,8 +10,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { createClient } from '../lib/supabase/client'
+import { supabase } from '../lib/supabase'
 import AddJobForm from './AddJobForm'
+import { createClient } from '../lib/supabase/client'
 
 const statusColors = {
   'Applied':        'bg-blue-100 text-blue-700',
@@ -23,6 +24,12 @@ const statusColors = {
   'Rejected':       'bg-red-100 text-red-700',
   'Ghosted':        'bg-gray-100 text-gray-500',
   'Withdrawn':      'bg-gray-100 text-gray-500',
+}
+
+const workTypeBadge = {
+  'Remote':  'bg-green-50 text-green-700',
+  'Hybrid':  'bg-yellow-50 text-yellow-700',
+  'On-site': 'bg-orange-50 text-orange-700',
 }
 
 function DetailRow({ label, value }) {
@@ -61,6 +68,7 @@ function JobDetailPanel({ job, onClose, onEdit, onDelete }) {
           <DetailRow label="Source" value={job.source} />
           <DetailRow label="Apply Method" value={job.apply_method} />
           <DetailRow label="Location" value={job.location} />
+          <DetailRow label="Work Type" value={job.work_type} />
           <DetailRow label="Job Type" value={job.job_type} />
           <DetailRow label="Resume Version" value={job.resume_version} />
           <DetailRow label="Cover Letter" value={job.cover_letter ? '✅ Yes' : '❌ No'} />
@@ -81,9 +89,7 @@ function JobDetailPanel({ job, onClose, onEdit, onDelete }) {
         </div>
 
         <div className="px-6 pb-6 flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={onEdit}>
-            ✏️ Edit
-          </Button>
+          <Button variant="outline" className="flex-1" onClick={onEdit}>✏️ Edit</Button>
           {!confirming ? (
             <Button variant="outline" className="flex-1 text-red-500 border-red-200 hover:bg-red-50" onClick={() => setConfirming(true)}>
               🗑 Delete
@@ -94,16 +100,15 @@ function JobDetailPanel({ job, onClose, onEdit, onDelete }) {
             </Button>
           )}
         </div>
-
       </div>
     </div>
   )
 }
 
 export default function JobsTable({ jobs, onRefresh }) {
-  const supabase = createClient()
   const [selectedJob, setSelectedJob] = useState(null)
   const [editingJob, setEditingJob] = useState(null)
+  const supabase = createClient()
 
   async function handleDelete(job) {
     const { error } = await supabase
@@ -124,23 +129,24 @@ export default function JobsTable({ jobs, onRefresh }) {
 
   return (
     <>
-      <div className="rounded-lg border bg-white shadow-sm">
-        <Table>
+      <div className="rounded-lg border bg-white shadow-sm overflow-x-auto">
+        <Table className="text-xs">
           <TableHeader>
             <TableRow>
-              <TableHead>Company</TableHead>
-              <TableHead>Job Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date Applied</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Company</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Job Title</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Status</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Date</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Source</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Work Type</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Location</TableHead>
+              <TableHead className="py-2 px-3 whitespace-nowrap">Type</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-400 py-10">
+                <TableCell colSpan={8} className="text-center text-gray-400 py-10">
                   No applications yet. Add your first one!
                 </TableCell>
               </TableRow>
@@ -151,17 +157,24 @@ export default function JobsTable({ jobs, onRefresh }) {
                   onClick={() => setSelectedJob(job)}
                   className="cursor-pointer hover:bg-slate-50 transition-colors"
                 >
-                  <TableCell className="font-semibold">{job.company_name}</TableCell>
-                  <TableCell>{job.job_title}</TableCell>
-                  <TableCell>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[job.status] || 'bg-gray-100 text-gray-600'}`}>
+                  <TableCell className="py-2 px-3 font-semibold max-w-[160px] truncate">{job.company_name}</TableCell>
+                  <TableCell className="py-2 px-3 max-w-[180px] truncate">{job.job_title}</TableCell>
+                  <TableCell className="py-2 px-3">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusColors[job.status] || 'bg-gray-100 text-gray-600'}`}>
                       {job.status}
                     </span>
                   </TableCell>
-                  <TableCell>{job.applied_date}</TableCell>
-                  <TableCell>{job.source || '—'}</TableCell>
-                  <TableCell>{job.location || '—'}</TableCell>
-                  <TableCell>{job.job_type || '—'}</TableCell>
+                  <TableCell className="py-2 px-3 whitespace-nowrap">{job.applied_date}</TableCell>
+                  <TableCell className="py-2 px-3 whitespace-nowrap">{job.source || '—'}</TableCell>
+                  <TableCell className="py-2 px-3">
+                    {job.work_type ? (
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${workTypeBadge[job.work_type] || 'bg-gray-100 text-gray-600'}`}>
+                        {job.work_type}
+                      </span>
+                    ) : '—'}
+                  </TableCell>
+                  <TableCell className="py-2 px-3 max-w-[120px] truncate">{job.location || '—'}</TableCell>
+                  <TableCell className="py-2 px-3 whitespace-nowrap">{job.job_type || '—'}</TableCell>
                 </TableRow>
               ))
             )}
@@ -181,7 +194,7 @@ export default function JobsTable({ jobs, onRefresh }) {
       {editingJob && (
         <AddJobForm
           editJob={editingJob}
-          onJobAdded={() => { setEditingJob(null); onRefresh(); }}
+          onJobAdded={() => { setEditingJob(null); onRefresh() }}
           onEditClose={() => setEditingJob(null)}
         />
       )}

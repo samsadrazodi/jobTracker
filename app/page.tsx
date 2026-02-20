@@ -6,6 +6,7 @@ import JobsTable from '../components/JobsTable'
 import AddJobForm from '../components/AddJobForm'
 import Header from '../components/Header'
 import Dashboard from '../components/Dashboard'
+import CSVImporter from '../components/CSVImporter'
 
 export default function Home() {
   const [jobs, setJobs] = useState([])
@@ -37,7 +38,10 @@ export default function Home() {
               {loading ? 'Loading...' : `${jobs.length} application${jobs.length !== 1 ? 's' : ''} total`}
             </p>
           </div>
-          <AddJobForm onJobAdded={fetchJobs} />
+          <div className="flex items-center gap-3">
+            <CSVImporter onImportComplete={fetchJobs} />
+            <AddJobForm onJobAdded={fetchJobs} />
+          </div>
         </div>
         {loading ? (
           <p className="text-center text-gray-400 py-20">Loading your applications...</p>
