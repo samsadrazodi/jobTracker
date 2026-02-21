@@ -12,7 +12,7 @@ function parseLocalDate(dateStr: string): Date {
   return new Date(y, m - 1, d)
 }
 
-function FollowUpBanner({ jobs }) {
+function FollowUpBanner({ jobs }: { jobs: any[] }) {
   const [dismissed, setDismissed] = useState(false)
 
   const today = new Date()
@@ -71,7 +71,7 @@ function FollowUpBanner({ jobs }) {
 }
 
 export default function Home() {
-  const [jobs, setJobs] = useState<any[]>([])
+  const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
