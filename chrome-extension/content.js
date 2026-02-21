@@ -217,7 +217,6 @@ async function handleSidebarSave() {
       throw new Error(err.message || 'Failed to save')
     }
 
-    // Show success state
     document.getElementById('jt-form').innerHTML = `
       <div style="text-align:center; padding: 40px 20px;">
         <div style="font-size:48px; margin-bottom:12px;">✅</div>
@@ -385,7 +384,6 @@ async function openSidebar() {
   if (sidebarOpen) { closeSidebar(); return }
   sidebarOpen = true
 
-  // Create sidebar container
   sidebarEl = document.createElement('div')
   sidebarEl.id = 'jt-sidebar'
   sidebarEl.style.cssText = `
@@ -406,7 +404,6 @@ async function openSidebar() {
   `
 
   sidebarEl.innerHTML = `
-    <!-- Header -->
     <div style="background:#111827; color:white; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
       <div>
         <div style="font-size:16px; font-weight:800; letter-spacing:-0.3px;">Job<span style="color:#3b82f6;">Tracker</span></div>
@@ -414,14 +411,11 @@ async function openSidebar() {
       </div>
       <button id="jt-close-btn" style="background:none; border:none; color:#9ca3af; font-size:22px; cursor:pointer; line-height:1; padding:0;">✕</button>
     </div>
-
-    <!-- Scrollable form area -->
     <div id="jt-form" style="flex:1; overflow-y:auto;"></div>
   `
 
   document.body.appendChild(sidebarEl)
 
-  // Animate in
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       sidebarEl.style.transform = 'translateX(0)'
@@ -430,7 +424,6 @@ async function openSidebar() {
 
   document.getElementById('jt-close-btn').addEventListener('click', closeSidebar)
 
-  // Check if signed in
   const stored = await chrome.storage.local.get(['jt_user_email', 'jt_user_password'])
   if (!stored.jt_user_email || !stored.jt_user_password) {
     renderSignIn()
@@ -440,10 +433,16 @@ async function openSidebar() {
 }
 
 // -------------------------------------------------------
-// LISTEN FOR TOGGLE MESSAGE FROM BACKGROUND
+// LISTEN FOR MESSAGES FROM BACKGROUND
 // -------------------------------------------------------
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'ping') {
+    sendResponse({ alive: true })
+    return true
+  }
   if (request.action === 'toggleSidebar') {
     openSidebar()
+    sendResponse({ ok: true })
+    return true
   }
 })
