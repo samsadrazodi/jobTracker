@@ -222,37 +222,77 @@ function GhostBanner({ jobs, onRefresh }) {
   )
 }
 
-function KanbanCard({ job, onClick, onDragStart, compact = false }) {
+function KanbanCard({ job, onClick, onDragStart, onMoveJob, compact = false }) {
+  const [showMover, setShowMover] = useState(false)
+  const longPressTimer = useRef(null)
+
+  function handleTouchStart() {
+    longPressTimer.current = setTimeout(() => setShowMover(true), 500)
+  }
+  function handleTouchEnd() {
+    clearTimeout(longPressTimer.current)
+  }
+
   return (
-    <div
-      draggable
-      onDragStart={(e) => onDragStart(e, job)}
-      onClick={() => onClick(job)}
-      className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-all select-none ${compact ? 'p-2' : 'p-3'}`}
-    >
-      <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{job.company_name}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{job.job_title}</p>
-      {!compact && (
-        <div className="flex flex-col gap-1 mt-2.5">
-          {job.applied_date && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-              <Calendar className="w-3 h-3 shrink-0" />{job.applied_date}
-            </div>
-          )}
-          {job.source && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-              <Briefcase className="w-3 h-3 shrink-0" />{job.source}
-            </div>
-          )}
-          {job.work_type && (
-            <span className={`mt-1 self-start text-xs font-medium px-2 py-0.5 rounded-full ${workTypeBadge[job.work_type] || 'bg-gray-100 text-gray-500'}`}>
-              {job.work_type}
-            </span>
-          )}
-        </div>
-      )}
-      {compact && job.applied_date && (
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{job.applied_date}</p>
+    <div className="relative">
+      <div
+        draggable
+        onDragStart={(e) => onDragStart(e, job)}
+        onClick={() => !showMover && onClick(job)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={() => clearTimeout(longPressTimer.current)}
+        className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 cursor-grab active:cursor-grabbing active:opacity-60 active:scale-95 transition-all select-none ${compact ? 'p-2' : 'p-3'}`}
+      >
+        <p className="font-semibold text-sm text-gray-900 dark:text-white truncate">{job.company_name}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{job.job_title}</p>
+        {!compact && (
+          <div className="flex flex-col gap-1 mt-2.5">
+            {job.applied_date && (
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                <Calendar className="w-3 h-3 shrink-0" />{job.applied_date}
+              </div>
+            )}
+            {job.source && (
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                <Briefcase className="w-3 h-3 shrink-0" />{job.source}
+              </div>
+            )}
+            {job.work_type && (
+              <span className={`mt-1 self-start text-xs font-medium px-2 py-0.5 rounded-full ${workTypeBadge[job.work_type] || 'bg-gray-100 text-gray-500'}`}>
+                {job.work_type}
+              </span>
+            )}
+          </div>
+        )}
+        {compact && job.applied_date && (
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{job.applied_date}</p>
+        )}
+        {compact && <p className="text-[10px] text-gray-300 dark:text-gray-600 mt-1">Hold to move</p>}
+      </div>
+
+      {/* Long-press status picker */}
+      {showMover && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowMover(false)} />
+          <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-2 w-44">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2 pb-1.5">Move to...</p>
+            {KANBAN_COLUMNS.map(col => (
+              <button
+                key={col.status}
+                onClick={() => { onMoveJob(job, col.status); setShowMover(false) }}
+                className={`w-full text-left text-xs px-2 py-1.5 rounded-lg flex items-center gap-2 transition-colors ${
+                  job.status === col.status
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full shrink-0 ${col.color}`} />
+                {col.status}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
@@ -275,7 +315,19 @@ function KanbanBoard({ jobs, onRefresh }) {
     return map
   }, [localJobs])
 
+  // Mouse drag handlers
   function handleDragStart(e, job) { dragJobRef.current = job; e.dataTransfer.effectAllowed = 'move' }
+
+  async function handleMoveJob(job, newStatus) {
+    if (job.status === newStatus) return
+    setLocalJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: newStatus } : j))
+    const { error } = await supabase.from('applications')
+      .update({ status: newStatus, auto_ghosted: false }).eq('id', job.id)
+    if (error) {
+      setLocalJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: job.status } : j))
+      alert('Failed to update status.')
+    } else { onRefresh() }
+  }
   function handleDragOver(e, status) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverStatus(status) }
   function handleDragLeave() { setDragOverStatus(null) }
 
@@ -292,6 +344,8 @@ function KanbanBoard({ jobs, onRefresh }) {
     } else { onRefresh() }
     dragJobRef.current = null
   }
+
+
 
   const KanbanColumn = ({ status, color, light, border, compact = false }) => {
     const colJobs = jobsByStatus[status] || []
@@ -313,6 +367,7 @@ function KanbanBoard({ jobs, onRefresh }) {
           </span>
         </div>
         <div
+          data-status={status}
           className={`flex-1 rounded-b-lg border border-t-0 p-1.5 flex flex-col gap-1.5 overflow-y-auto transition-colors ${border} ${
             isOver ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-400 dark:border-blue-500' : light
           }`}
@@ -329,7 +384,7 @@ function KanbanBoard({ jobs, onRefresh }) {
           ) : (
             <>
               {colJobs.map(job => (
-                <KanbanCard key={job.id} job={job} onClick={setSelectedJob} onDragStart={handleDragStart} compact={compact} />
+                <KanbanCard key={job.id} job={job} onClick={setSelectedJob} onDragStart={handleDragStart} onMoveJob={handleMoveJob} compact={compact} />
               ))}
               {isOver && <div className="h-1 rounded-full bg-blue-400 mx-1" />}
             </>
