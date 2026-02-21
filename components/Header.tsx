@@ -6,6 +6,7 @@ import ThemeToggle from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { createClient } from "../lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 import {
   LayoutDashboard,
   BriefcaseBusiness,
@@ -28,7 +29,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
