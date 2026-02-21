@@ -17,7 +17,6 @@ export default function ApplicationsPage() {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Filters
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [workTypeFilter, setWorkTypeFilter] = useState('')
@@ -39,13 +38,11 @@ export default function ApplicationsPage() {
     fetchJobs()
   }, [])
 
-  // Unique sources from data
   const sourceOptions = useMemo(() => {
     const sources = [...new Set(jobs.map(j => j.source).filter(Boolean))]
     return sources.sort()
   }, [jobs])
 
-  // Filtered jobs
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
       const searchLower = search.toLowerCase()
@@ -59,7 +56,6 @@ export default function ApplicationsPage() {
     })
   }, [jobs, search, statusFilter, workTypeFilter, sourceFilter])
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
   }, [search, statusFilter, workTypeFilter, sourceFilter])
@@ -73,7 +69,6 @@ export default function ApplicationsPage() {
     setSourceFilter('')
   }
 
-  // Pagination
   const totalPages = Math.ceil(filteredJobs.length / PAGE_SIZE)
   const paginatedJobs = filteredJobs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
@@ -82,18 +77,24 @@ export default function ApplicationsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const selectClass = "border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 bg-white"
+  const selectClass = `
+    border border-gray-200 dark:border-gray-700
+    rounded-lg px-3 py-2 text-sm
+    focus:outline-none focus:ring-2 focus:ring-slate-400
+    bg-white dark:bg-gray-800
+    text-gray-700 dark:text-gray-300
+  `
 
   return (
     <>
-      <Header />
+      
       <main className="max-w-6xl mx-auto px-6 py-10">
 
         {/* Page Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Applications</h1>
-            <p className="text-gray-500 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Applications</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
               {loading ? 'Loading...' : (
                 hasActiveFilters
                   ? `${filteredJobs.length} of ${jobs.length} application${jobs.length !== 1 ? 's' : ''}`
@@ -108,7 +109,8 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Search + Filters */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 flex flex-wrap gap-3 items-center">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 flex flex-wrap gap-3 items-center">
+
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
@@ -117,7 +119,7 @@ export default function ApplicationsPage() {
               placeholder="Search company or job title..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-600"
             />
           </div>
 
@@ -143,7 +145,7 @@ export default function ApplicationsPage() {
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="text-sm text-red-500 hover:text-red-600 border border-red-200 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
+              className="text-sm text-red-500 hover:text-red-600 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
             >
               ✕ Clear
             </button>
@@ -152,14 +154,14 @@ export default function ApplicationsPage() {
 
         {/* No results */}
         {!loading && filteredJobs.length === 0 && (
-          <div className="text-center py-20 text-gray-400">
+          <div className="text-center py-20 text-gray-400 dark:text-gray-500">
             <p className="text-lg mb-2">No applications match your filters.</p>
             <button onClick={clearFilters} className="text-sm text-blue-500 hover:underline">Clear filters</button>
           </div>
         )}
 
         {loading ? (
-          <p className="text-center text-gray-400 py-20">Loading your applications...</p>
+          <p className="text-center text-gray-400 dark:text-gray-500 py-20">Loading your applications...</p>
         ) : filteredJobs.length > 0 ? (
           <>
             <JobsTable jobs={paginatedJobs} onRefresh={fetchJobs} />
@@ -170,7 +172,7 @@ export default function ApplicationsPage() {
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   ← Prev
                 </button>
@@ -188,15 +190,15 @@ export default function ApplicationsPage() {
                   }, [])
                   .map((item, idx) =>
                     item === '...' ? (
-                      <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">...</span>
+                      <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 dark:text-gray-600">...</span>
                     ) : (
                       <button
                         key={item}
                         onClick={() => goToPage(item)}
                         className={`px-3 py-1.5 text-sm border rounded-md transition-colors ${
                           currentPage === item
-                            ? 'bg-gray-900 text-white border-gray-900'
-                            : 'border-gray-200 hover:bg-gray-50'
+                            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                       >
                         {item}
@@ -207,7 +209,7 @@ export default function ApplicationsPage() {
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 text-sm border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Next →
                 </button>

@@ -27,12 +27,25 @@ const JOB_TYPE_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#f97316']
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
+const tooltipStyle = {
+  contentStyle: {
+    background: '#1f2937',
+    border: '1px solid #374151',
+    borderRadius: '8px',
+    color: '#f9fafb',
+  },
+  labelStyle: { color: '#f9fafb' },
+  itemStyle: { color: '#f9fafb' },
+}
+
+const tickStyle = { fontSize: 11, fill: '#9ca3af' }
+
 function StatCard({ label, value, sub, color }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <p className="text-sm text-gray-400 mb-1">{label}</p>
-      <p className={`text-3xl font-black ${color || 'text-gray-900'}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+      <p className="text-sm text-gray-400 dark:text-gray-500 mb-1">{label}</p>
+      <p className={`text-3xl font-black ${color || 'text-gray-900 dark:text-white'}`}>{value}</p>
+      {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{sub}</p>}
     </div>
   )
 }
@@ -40,23 +53,34 @@ function StatCard({ label, value, sub, color }) {
 function LockedCard({ title, requiredCount, currentCount }) {
   const pct = Math.min(Math.round((currentCount / requiredCount) * 100), 100)
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 flex flex-col justify-between opacity-60">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 flex flex-col justify-between opacity-60">
       <div>
-        <h3 className="text-sm font-bold text-gray-700 mb-2">{title}</h3>
-        <p className="text-xs text-gray-400 mb-4">
-          Available after <strong className="text-gray-600">{requiredCount}</strong> applications
-          &nbsp;·&nbsp; you have <strong className="text-gray-600">{currentCount}</strong>
+        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">{title}</h3>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
+          Available after <strong className="text-gray-600 dark:text-gray-300">{requiredCount}</strong> applications
+          &nbsp;·&nbsp; you have <strong className="text-gray-600 dark:text-gray-300">{currentCount}</strong>
         </p>
       </div>
       <div>
-        <div className="w-full bg-gray-100 rounded-full h-1.5">
+        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
           <div
             className="bg-blue-400 h-1.5 rounded-full transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1 text-right">{pct}%</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">{pct}%</p>
       </div>
+    </div>
+  )
+}
+
+function ChartCard({ title, sub, children }) {
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+      <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">{title}</h3>
+      {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">{sub}</p>}
+      {!sub && <div className="mb-4" />}
+      {children}
     </div>
   )
 }
@@ -66,7 +90,7 @@ function isResponded(job) {
 }
 
 export default function Dashboard({ jobs }) {
-  if (!jobs.length) return null
+  if (!jobs || !jobs.length) return null
 
   const total = jobs.length
   const inProgress = jobs.filter(j => ['Phone Screen', 'Interview', 'Take Home', 'Final Round'].includes(j.status)).length
@@ -75,7 +99,6 @@ export default function Dashboard({ jobs }) {
   const rejected = jobs.filter(j => j.status === 'Rejected').length
   const responseRate = total > 0 ? Math.round((jobs.filter(isResponded).length / total) * 100) : 0
 
-  // --- Status breakdown ---
   const statusData = Object.entries(
     jobs.reduce((acc, job) => {
       acc[job.status] = (acc[job.status] || 0) + 1
@@ -83,7 +106,6 @@ export default function Dashboard({ jobs }) {
     }, {})
   ).map(([name, value]) => ({ name, value }))
 
-  // --- Work type breakdown ---
   const workTypeData = Object.entries(
     jobs.reduce((acc, job) => {
       if (!job.work_type) return acc
@@ -92,7 +114,6 @@ export default function Dashboard({ jobs }) {
     }, {})
   ).map(([name, value]) => ({ name, value }))
 
-  // --- Applications over time ---
   const byDate = jobs.reduce((acc, job) => {
     if (!job.applied_date) return acc
     const date = new Date(job.applied_date)
@@ -107,7 +128,6 @@ export default function Dashboard({ jobs }) {
     .map(({ date, count }) => ({ date, count }))
     .slice(-10)
 
-  // --- Top sources ---
   const sourceData = Object.entries(
     jobs.reduce((acc, job) => {
       if (!job.source) return acc
@@ -118,7 +138,6 @@ export default function Dashboard({ jobs }) {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value)
 
-  // --- Most active day of week (min 10) ---
   const dayData = total >= 10 ? (() => {
     const counts = Array(7).fill(0)
     jobs.forEach(job => {
@@ -129,7 +148,6 @@ export default function Dashboard({ jobs }) {
     return DAYS.map((name, i) => ({ name: name.slice(0, 3), count: counts[i] }))
   })() : null
 
-  // --- Job type split (min 10) ---
   const jobTypeData = total >= 10 ? Object.entries(
     jobs.reduce((acc, job) => {
       if (!job.job_type) return acc
@@ -138,7 +156,6 @@ export default function Dashboard({ jobs }) {
     }, {})
   ).map(([name, value]) => ({ name, value })) : null
 
-  // --- Best performing source by response rate (min 20) ---
   const sourceResponseData = total >= 20 ? (() => {
     const sourceMap = {}
     jobs.forEach(job => {
@@ -157,7 +174,6 @@ export default function Dashboard({ jobs }) {
       .sort((a, b) => b.rate - a.rate)
   })() : null
 
-  // --- Response rate by job type (min 20) ---
   const jobTypeResponseData = total >= 20 ? (() => {
     const map = {}
     jobs.forEach(job => {
@@ -176,7 +192,6 @@ export default function Dashboard({ jobs }) {
       .sort((a, b) => b.rate - a.rate)
   })() : null
 
-  // --- Easy Apply vs External success rate (min 25) ---
   const applyMethodData = total >= 25 ? (() => {
     const easyKeywords = ['easy apply', 'easyapply']
     const map = { 'Easy Apply': { total: 0, responded: 0 }, 'External Apply': { total: 0, responded: 0 } }
@@ -196,7 +211,6 @@ export default function Dashboard({ jobs }) {
       }))
   })() : null
 
-  // --- Resume version performance (min 25) ---
   const resumeData = total >= 25 ? (() => {
     const map = {}
     jobs.forEach(job => {
@@ -228,12 +242,10 @@ export default function Dashboard({ jobs }) {
         <StatCard label="Response Rate" value={`${responseRate}%`} color={responseRate > 20 ? 'text-green-600' : 'text-orange-500'} sub="of applications" />
       </div>
 
-      {/* Row 1 — Status, Work Type, Sources */}
+      {/* Row 1 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
 
-        {/* Status Breakdown */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Applications by Status</h3>
+        <ChartCard title="Applications by Status">
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={statusData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value">
@@ -241,24 +253,22 @@ export default function Dashboard({ jobs }) {
                   <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#cbd5e1'} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value, name) => [value, name]} />
+              <Tooltip {...tooltipStyle} />
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
             {statusData.map(entry => (
-              <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-500">
+              <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ background: STATUS_COLORS[entry.name] || '#cbd5e1' }} />
                 {entry.name} ({entry.value})
               </div>
             ))}
           </div>
-        </div>
+        </ChartCard>
 
-        {/* Work Type */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Remote vs Hybrid vs On-site</h3>
+        <ChartCard title="Remote vs Hybrid vs On-site">
           {workTypeData.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">No work type data yet</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">No work type data yet</p>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={220}>
@@ -268,12 +278,12 @@ export default function Dashboard({ jobs }) {
                       <Cell key={entry.name} fill={WORK_COLORS[entry.name] || '#cbd5e1'} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value, name) => [value, name]} />
+                  <Tooltip {...tooltipStyle} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                 {workTypeData.map(entry => (
-                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ background: WORK_COLORS[entry.name] || '#cbd5e1' }} />
                     {entry.name} ({entry.value})
                   </div>
@@ -281,51 +291,45 @@ export default function Dashboard({ jobs }) {
               </div>
             </>
           )}
-        </div>
+        </ChartCard>
 
-        {/* Sources volume */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Applications by Source</h3>
+        <ChartCard title="Applications by Source">
           {sourceData.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">No source data yet</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-10">No source data yet</p>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={sourceData} layout="vertical" margin={{ left: 10 }}>
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
-                <Tooltip />
+                <XAxis type="number" tick={tickStyle} />
+                <YAxis type="category" dataKey="name" tick={tickStyle} width={90} />
+                <Tooltip {...tooltipStyle} />
                 <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </ChartCard>
 
       </div>
 
-      {/* Row 2 — Most active day + Job type split */}
+      {/* Row 2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-        {/* Most active day */}
         {dayData ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-4">Most Active Day of Week</h3>
+          <ChartCard title="Most Active Day of Week">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={dayData}>
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip />
+                <XAxis dataKey="name" tick={tickStyle} />
+                <YAxis tick={tickStyle} allowDecimals={false} />
+                <Tooltip {...tooltipStyle} />
                 <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </ChartCard>
         ) : (
           <LockedCard title="Most Active Day of Week" requiredCount={10} currentCount={total} />
         )}
 
-        {/* Job type split */}
         {jobTypeData ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-4">Full-time vs Contract vs Other</h3>
+          <ChartCard title="Full-time vs Contract vs Other">
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={jobTypeData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3} dataKey="value">
@@ -333,122 +337,108 @@ export default function Dashboard({ jobs }) {
                     <Cell key={entry.name} fill={JOB_TYPE_COLORS[i % JOB_TYPE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value, name) => [value, name]} />
+                <Tooltip {...tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
               {jobTypeData.map((entry, i) => (
-                <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: JOB_TYPE_COLORS[i % JOB_TYPE_COLORS.length] }} />
                   {entry.name} ({entry.value})
                 </div>
               ))}
             </div>
-          </div>
+          </ChartCard>
         ) : (
           <LockedCard title="Full-time vs Contract Split" requiredCount={10} currentCount={total} />
         )}
 
       </div>
 
-      {/* Row 3 — Response rate insights (min 20) */}
+      {/* Row 3 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-        {/* Best source by response rate */}
         {sourceResponseData ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-1">Best Performing Source</h3>
-            <p className="text-xs text-gray-400 mb-4">Response rate per job board</p>
+          <ChartCard title="Best Performing Source" sub="Response rate per job board">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={sourceResponseData} layout="vertical" margin={{ left: 10 }}>
-                <XAxis type="number" unit="%" tick={{ fontSize: 11 }} domain={[0, 100]} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
-                <Tooltip formatter={(value) => [`${value}%`, 'Response Rate']} />
+                <XAxis type="number" unit="%" tick={tickStyle} domain={[0, 100]} />
+                <YAxis type="category" dataKey="name" tick={tickStyle} width={90} />
+                <Tooltip {...tooltipStyle} formatter={(value) => [`${value}%`, 'Response Rate']} />
                 <Bar dataKey="rate" fill="#10b981" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </ChartCard>
         ) : (
           <LockedCard title="Best Performing Source (Response Rate)" requiredCount={20} currentCount={total} />
         )}
 
-        {/* Response rate by job type */}
         {jobTypeResponseData ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-1">Response Rate by Job Type</h3>
-            <p className="text-xs text-gray-400 mb-4">Which job types respond most</p>
+          <ChartCard title="Response Rate by Job Type" sub="Which job types respond most">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={jobTypeResponseData} layout="vertical" margin={{ left: 10 }}>
-                <XAxis type="number" unit="%" tick={{ fontSize: 11 }} domain={[0, 100]} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
-                <Tooltip formatter={(value) => [`${value}%`, 'Response Rate']} />
+                <XAxis type="number" unit="%" tick={tickStyle} domain={[0, 100]} />
+                <YAxis type="category" dataKey="name" tick={tickStyle} width={90} />
+                <Tooltip {...tooltipStyle} formatter={(value) => [`${value}%`, 'Response Rate']} />
                 <Bar dataKey="rate" fill="#f59e0b" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </ChartCard>
         ) : (
           <LockedCard title="Response Rate by Job Type" requiredCount={20} currentCount={total} />
         )}
 
       </div>
 
-      {/* Row 4 — Easy Apply + Resume version (min 25) */}
+      {/* Row 4 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 
-        {/* Easy Apply vs External */}
         {applyMethodData ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-1">Easy Apply vs External Apply</h3>
-            <p className="text-xs text-gray-400 mb-4">Which method gets more responses</p>
+          <ChartCard title="Easy Apply vs External Apply" sub="Which method gets more responses">
             <div className="flex flex-col gap-4 mt-4">
               {applyMethodData.map((item, i) => (
                 <div key={item.name}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700">{item.name}</span>
-                    <span className="font-bold text-gray-900">{item.rate}% <span className="text-gray-400 font-normal">({item.total} apps)</span></span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{item.name}</span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {item.rate}% <span className="text-gray-400 dark:text-gray-500 font-normal">({item.total} apps)</span>
+                    </span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2.5">
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
                     <div
                       className="h-2.5 rounded-full"
-                      style={{
-                        width: `${item.rate}%`,
-                        background: i === 0 ? '#3b82f6' : '#8b5cf6'
-                      }}
+                      style={{ width: `${item.rate}%`, background: i === 0 ? '#3b82f6' : '#8b5cf6' }}
                     />
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </ChartCard>
         ) : (
           <LockedCard title="Easy Apply vs External Apply Success Rate" requiredCount={25} currentCount={total} />
         )}
 
-        {/* Resume version performance */}
         {resumeData ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-1">Resume Version Performance</h3>
-            <p className="text-xs text-gray-400 mb-4">Response rate by resume version</p>
+          <ChartCard title="Resume Version Performance" sub="Response rate by resume version">
             <div className="flex flex-col gap-4 mt-4">
               {resumeData.map((item, i) => (
                 <div key={item.name}>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700">{item.name}</span>
-                    <span className="font-bold text-gray-900">{item.rate}% <span className="text-gray-400 font-normal">({item.total} apps)</span></span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{item.name}</span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {item.rate}% <span className="text-gray-400 dark:text-gray-500 font-normal">({item.total} apps)</span>
+                    </span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2.5">
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
                     <div
                       className="h-2.5 rounded-full"
-                      style={{
-                        width: `${item.rate}%`,
-                        background: i === 0 ? '#10b981' : i === 1 ? '#3b82f6' : '#f59e0b'
-                      }}
+                      style={{ width: `${item.rate}%`, background: i === 0 ? '#10b981' : i === 1 ? '#3b82f6' : '#f59e0b' }}
                     />
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </ChartCard>
         ) : (
           <LockedCard title="Resume Version Performance" requiredCount={25} currentCount={total} />
         )}
@@ -457,18 +447,17 @@ export default function Dashboard({ jobs }) {
 
       {/* Timeline */}
       {timelineData.length > 1 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-bold text-gray-700 mb-4">Applications Over Time</h3>
+        <ChartCard title="Applications Over Time">
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={timelineData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="date" tick={tickStyle} />
+              <YAxis tick={tickStyle} allowDecimals={false} />
+              <Tooltip {...tooltipStyle} />
               <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </ChartCard>
       )}
 
     </div>

@@ -1,100 +1,64 @@
-'use client'
+"use client";
 
-import { createClient } from '../lib/supabase/client'
-import { useRouter, usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import ThemeToggle from "./ThemeToggle";
+import { cn } from "@/lib/utils";
+import {
+  LayoutDashboard,
+  BriefcaseBusiness,
+  ScanText,
+  Settings,
+  Puzzle,
+} from "lucide-react";
+
+const navLinks = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/applications", label: "Applications", icon: BriefcaseBusiness },
+  { href: "/resume-scorer", label: "Resume Scorer", icon: ScanText },
+  { href: "/install-extension", label: "Extension", icon: Puzzle },
+  { href: "/settings", label: "Settings", icon: Settings },
+];
 
 export default function Header() {
-  const [email, setEmail] = useState('')
-  const [showMenu, setShowMenu] = useState(false)
-  const supabase = createClient()
-  const router = useRouter()
-  const pathname = usePathname()
-
-  useEffect(() => {
-    async function getUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) setEmail(user.email)
-    }
-    getUser()
-  }, [])
-
-  async function handleSignOut() {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
-
-  const navItems = [
-    { label: '📊 Dashboard', href: '/' },
-    { label: '📋 Applications', href: '/applications' },
-  ]
+  const pathname = usePathname();
 
   return (
-    <header className="border-b border-gray-200 bg-white sticky top-0 z-40">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
+          <BriefcaseBusiness className="h-5 w-5 text-primary" />
+          <span className="hidden sm:inline">JobTracker</span>
+        </Link>
 
-        {/* Logo + Nav */}
-        <div className="flex items-center gap-8">
-          <span className="text-xl font-black text-gray-900 tracking-tight">
-            Job<span className="text-blue-600">Tracker</span>
-          </span>
-          <nav className="flex items-center gap-1">
-            {navItems.map(item => (
-              <button
-                key={item.href}
-                onClick={() => router.push(item.href)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  pathname === item.href
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`}
+        {/* Nav */}
+        <nav className="flex items-center gap-1">
+          {navLinks.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                )}
               >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
         {/* Right side */}
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-200 rounded-full px-3 py-1.5 hover:bg-gray-50 transition-colors"
-          >
-            <div className="w-6 h-6 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-bold">
-              {email ? email[0].toUpperCase() : '?'}
-            </div>
-            <span className="hidden sm:block">{email}</span>
-            <span className="text-gray-400">▾</span>
-          </button>
-
-          {showMenu && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-xs text-gray-400">Signed in as</p>
-                  <p className="text-sm font-medium text-gray-900 truncate">{email}</p>
-                </div>
-                <button
-                  onClick={() => { setShowMenu(false); router.push('/settings') }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  ⚙️ Account Settings
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  🚪 Sign Out
-                </button>
-              </div>
-            </>
-          )}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
         </div>
-
       </div>
     </header>
-  )
+  );
 }

@@ -120,8 +120,8 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
     }
   }
 
-  const inputClass = "w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
-  const labelClass = "block text-sm font-medium text-gray-700 mb-1"
+  const inputClass = "w-full border border-gray-200 dark:border-gray-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+  const labelClass = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
 
   return (
     <>
@@ -133,24 +133,44 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
 
       {open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-xl font-bold">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {editJob ? 'Edit Application' : 'Add Job Application'}
               </h2>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+              <button
+                onClick={handleClose}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl leading-none"
+              >
+                &times;
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 grid grid-cols-2 gap-4">
 
               <div>
                 <label className={labelClass}>Company Name *</label>
-                <input name="company_name" value={form.company_name} onChange={handleChange} required className={inputClass} placeholder="e.g. Google" />
+                <input
+                  name="company_name"
+                  value={form.company_name}
+                  onChange={handleChange}
+                  required
+                  className={inputClass}
+                  placeholder="e.g. Google"
+                />
               </div>
 
               <div>
                 <label className={labelClass}>Job Title *</label>
-                <input name="job_title" value={form.job_title} onChange={handleChange} required className={inputClass} placeholder="e.g. Frontend Engineer" />
+                <input
+                  name="job_title"
+                  value={form.job_title}
+                  onChange={handleChange}
+                  required
+                  className={inputClass}
+                  placeholder="e.g. Frontend Engineer"
+                />
               </div>
 
               <div>
@@ -162,7 +182,14 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
 
               <div>
                 <label className={labelClass}>Date Applied *</label>
-                <input type="date" name="applied_date" value={form.applied_date} onChange={handleChange} required className={inputClass} />
+                <input
+                  type="date"
+                  name="applied_date"
+                  value={form.applied_date}
+                  onChange={handleChange}
+                  required
+                  className={inputClass}
+                />
               </div>
 
               <div>
@@ -183,7 +210,13 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
 
               <div>
                 <label className={labelClass}>Location</label>
-                <input name="location" value={form.location} onChange={handleChange} className={inputClass} placeholder="e.g. New York, NY" />
+                <input
+                  name="location"
+                  value={form.location}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="e.g. New York, NY"
+                />
               </div>
 
               <div>
@@ -204,33 +237,76 @@ export default function AddJobForm({ onJobAdded, editJob, onEditClose }) {
 
               <div>
                 <label className={labelClass}>Job URL</label>
-                <input name="job_url" value={form.job_url} onChange={handleChange} className={inputClass} placeholder="https://..." />
+                <input
+                  name="job_url"
+                  value={form.job_url}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="https://..."
+                />
               </div>
 
               <div>
                 <label className={labelClass}>Resume Version</label>
-                <input name="resume_version" value={form.resume_version} onChange={handleChange} className={inputClass} placeholder="e.g. v3-frontend" />
+                <input
+                  name="resume_version"
+                  value={form.resume_version}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="e.g. v3-frontend"
+                />
               </div>
 
               <div>
                 <label className={labelClass}>Follow Up Date</label>
-                <input type="date" name="follow_up_date" value={form.follow_up_date} onChange={handleChange} className={inputClass} />
+                <input
+                  type="date"
+                  name="follow_up_date"
+                  value={form.follow_up_date}
+                  onChange={handleChange}
+                  className={inputClass}
+                />
               </div>
 
               <div className="flex items-center gap-2 mt-2">
-                <input type="checkbox" name="cover_letter" id="cover_letter" checked={form.cover_letter} onChange={handleChange} className="w-4 h-4" />
-                <label htmlFor="cover_letter" className="text-sm font-medium text-gray-700">Cover Letter Included</label>
+                <input
+                  type="checkbox"
+                  name="cover_letter"
+                  id="cover_letter"
+                  checked={form.cover_letter}
+                  onChange={handleChange}
+                  className="w-4 h-4 accent-blue-600"
+                />
+                <label htmlFor="cover_letter" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Cover Letter Included
+                </label>
               </div>
 
               <div className="col-span-2">
                 <label className={labelClass}>Notes</label>
-                <textarea name="notes" value={form.notes} onChange={handleChange} className={inputClass} rows={3} placeholder="Any notes, contacts, interview prep..." />
+                <textarea
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  className={inputClass}
+                  rows={3}
+                  placeholder="Any notes, contacts, interview prep..."
+                />
               </div>
 
-              {error && <p className="col-span-2 text-red-500 text-sm">{error}</p>}
+              {error && (
+                <p className="col-span-2 text-red-500 dark:text-red-400 text-sm">{error}</p>
+              )}
 
               <div className="col-span-2 flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </Button>
                 <Button type="submit" disabled={loading}>
                   {loading ? 'Saving...' : editJob ? 'Save Changes' : 'Save Application'}
                 </Button>

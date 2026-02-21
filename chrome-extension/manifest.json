@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "JobTracker — Save Jobs",
+  "version": "1.0",
+  "description": "Save job postings directly to your JobTracker app with one click.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://*.dice.com/*",
+    "https://*.indeed.com/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.linkedin.com/*", "https://*.dice.com/*", "https://*.indeed.com/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
