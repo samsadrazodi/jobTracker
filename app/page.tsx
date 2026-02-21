@@ -71,7 +71,7 @@ function FollowUpBanner({ jobs }: { jobs: any[] }) {
 }
 
 export default function Home() {
-  const [jobs, setJobs] = useState([])
+  const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -81,7 +81,7 @@ export default function Home() {
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (!error) setJobs(data)
+    if (!error) setJobs(data ?? [])
     setLoading(false)
   }
 
