@@ -71,7 +71,7 @@ function FollowUpBanner({ jobs }) {
 }
 
 export default function Home() {
-  const [jobs, setJobs] = useState([])
+  const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
